@@ -1,13 +1,44 @@
 #+SETUPFILE:  https://fniessen.github.io/org-html-themes/setup/theme-readtheorg.setup
 #+TITLE: Обзор систем авторизации
 
-* Ссылки
-про реальзацию RBAC на Rest https://cloudify.co/blog/simple-secure-role-based-access-control-rest-api-rbac-server-devops-cloud-orchestration/
-Filter output: https://www.baeldung.com/spring-security-role-filter-json
-ABAC with spring security: https://dzone.com/articles/simple-attribute-based-access-control-with-spring
+* Решение авторизации
 
+** Keycloak
++ Java
++ [[https://www.keycloak.org/docs/latest/authorization_services/][Руководство.]]
 
+Совместим с OAuth2/UMA.
 
+*** TODO Написать тестовое приложение на Spring, работающее с Keycloak, в котором регулируются права доступа вплоть до отдельной записи в БД
+
+** ORY/Ladon
+
++ Golang
++ Совместим с OAuth2/UMA
++ Любая БД (необходимо реализовать один интерфейс для доступа, есть реализация для Redis)
++ https://github.com/ory/ladon лицензия Apache2.
+
+** Casbin
+
+*** Про реализацию пока не думаю, основные руководства на китайском. Начну с Ladon и потом keycloak (или наоборот).
+
+Универсальная библиотека для поддержки access control с лицензией Apache 2.0
+
+- Источник пользователей - внешний
+- Авторизация - внешняя
+
+*** Общие характеристики
+- сайт: https://github.com/casbin/casbin
+- языки: Go (язык реализации), биндинги: Java, Node.js, PHP, Python, C#, Rust (experimental)
+- Поддерживаемые модели:
+  + ACL
+  + [[RBAC][RBAC]] с ресурсами и ролями
+  + [[ABAC][ABAC]]
+
+- Поддерживается RESTful API и приоритет правил.
+
+*** Конфигурация
+Модель прав доступа специфицируется конфигурационным файлом по метамодели PERM
 * Модель контроля доступа
 ** DAC (Discretionary Access Control)
 
@@ -74,43 +105,44 @@ ABAC with spring security: https://dzone.com/articles/simple-attribute-based-acc
 #+BEGIN_SRC plantuml :file img/uma.png
 participant rp as "requesting party"
 participant client
-participant  rs as "resource server"
 participant authz as "authorization server"
+participant  rs as "resource server"
 participant ro as "resource owner"
 
-skinparam maxMessageSize 200
+skinparam maxMessageSize 250
+skinparam sequenceMessageAlign center
 
 ro -> authz: Set policy conditions (anytime)
 client -> rs: Resource request (no access token)
 rs -> client: 401 response with permission ticket, authz server location
 client -> authz: Access token (RPT) request with permission ticket, claim token (push claims)
-authz -> authz: Claim assessment: FAIL
-
+authz ->x authz: Claim assessment: FAIL (not authorized)
+authz -> client: 403 response with new permission ticket, need_info error, redirect_user hint
+client -> rp: Redirect user with permission ticket
+rp -> authz: Follow redirect to authz server
+rp <--> authz: Interactive claims gathering
+authz -> rp: Redirect back with new permission ticket
+rp -> client: Follow redirect to client
+client -> authz: RPT request with permission ticket
+authz -> authz: Claim assessment: OK
+authz -> client: Response with RPT and PCT
+client -> rs: Response request with RPT
+rs -> client: Protected resource
 #+END_SRC
 
 #+RESULTS:
 [[file:img/uma.png]]
 
+*** Определения на схеме:
++ Requesting party - браузер
++ client - клиент, который хочет получить доступ к определенному ресурсу (часть веб-приложения или сам requesting party)
++ RPT - requesting party token - токен доступа OAuth
++ permission - авторизация доступа к определенному ресурсу с некоторому набором прав (scopes), привязанных к ресурсу
++ permission ticket - handle, представляющий запрошенные права доступа (permissions), необходимый в запросах к серверу авторизации
++ claim - запрос, представляющий требуемые атрибуты запрашиваемого ресурса/ов.
++ persisted claims token - токен, позволяющий много раз использовать набор claims для авторизации.
 
-
-* Решение авторизации
-
-** Casbin
-
-Универсальная библиотека для поддержки access control с лицензией Apache 2.0
-
-- Источник пользователей - внешний
-- Авторизация - внешняя
-
-*** Общие характеристики
-- сайт: https://github.com/casbin/casbin
-- языки: Go (язык реализации), биндинги: Java, Node.js, PHP, Python, C#, Rust (experimental)
-- Поддерживаемые модели:
-  + ACL
-  + [[RBAC][RBAC]] с ресурсами и ролями
-  + [[ABAC][ABAC]]
-
-- Поддерживается RESTful API и приоритет правил.
-
-*** Конфигурация
-Модель прав доступа специфицируется конфигурационным файлом по метамодели PERM
+* Ссылки
++ про реализацию RBAC на Rest https://cloudify.co/blog/simple-secure-role-based-access-control-rest-api-rbac-server-devops-cloud-orchestration/
++ Filter output: https://www.baeldung.com/spring-security-role-filter-json
++ ABAC with spring security: https://dzone.com/articles/simple-attribute-based-access-control-with-spring
