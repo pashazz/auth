@@ -1,0 +1,116 @@
+#+SETUPFILE:  https://fniessen.github.io/org-html-themes/setup/theme-readtheorg.setup
+#+TITLE: Обзор систем авторизации
+
+* Ссылки
+про реальзацию RBAC на Rest https://cloudify.co/blog/simple-secure-role-based-access-control-rest-api-rbac-server-devops-cloud-orchestration/
+Filter output: https://www.baeldung.com/spring-security-role-filter-json
+ABAC with spring security: https://dzone.com/articles/simple-attribute-based-access-control-with-spring
+
+
+
+* Модель контроля доступа
+** DAC (Discretionary Access Control)
+
+<<DAC>> - модель контроля доступа, который может быть передан субъектом другим субъектам. Например, _владелец_ файлов в UNIX может передать права на файлы другим субъектам.
+
+** MAC (Mandatory Access Control)
+
+Модель контроля доступа, в которой реализация запрещает субъектам передавать права доступа. Права доступа определяются администратором системы.
+
+
+
+** RBAC (Role-Based Access Control)
+
+#+CAPTION: RBAC
+#+NAME: fig:RBAC
+[[./img/rbac.jpg]]
+
+<<RBAC>> - модель контроля доступа, в которой доступ к операции  производится на основании того, содержит ли роль субъекта соответствующую привилегию.
+
+Роль - множество привилегий, доступных пользователям, которым присвоены соответсвующие роли.
+
+Субъекту может быть присвоено несколько (0...n) ролей. Роли может быть присвоено несколько привилегий (возможностей исполнить операцию) и/или объектов.
+
+
+
+** ABAC (Attribute-Based Access Control)
+<<ABAC>> - модель контроля доступа, в которой во внимание принимаются свойства (атрибуты) субъекта или объекта, а также свойства окружения (дата, время доступа).
+
+[[./img/abac.jpg]]
+
+Например:
++ Пользователь(sub) может просмотреть документ(obj), если он(obj) создан коллегами из того же департамента
++ Пользователь(sub) может редактировать документ(obj), если он(subj) создал его(obj) и установлен режим черновика(obj).
+
+** PERM
+   Policy, Effect, Request, Matchers.
+
+
+
+* Авторизация
+
+** OAuth 2.0
+Повсеместно используемое решение для авторизации - OAuth 2.0
+
+Работает следующим образом:
+
+#+ATTR_ORG: :width 900
+[[./img/oauth2.jpg]]
+
+
+1. Client посылает запрос к Authorization Server (AS)
+2. Если Client не залогинен (кука нет или не валидный)
+   1. AS выдает форму логина и проверяет, что пользователь вошел правильно.
+      Источник пользователей - откуда угодно (DB, LDAP, etc)
+3. AS возвращает некоторый Token
+4. API Gateway видит запрос с Token
+5. API Gateway отправляет Token на AS
+6. Если Token верный, AS одобряет.
+
+
+Доступ к отдельным объектам (Entities) в такой модели регулируется протоколом UMA:
+
+#+TITLE: OAuth + UMA Protocol flow
+#+BEGIN_SRC plantuml :file img/uma.png
+participant rp as "requesting party"
+participant client
+participant  rs as "resource server"
+participant authz as "authorization server"
+participant ro as "resource owner"
+
+skinparam maxMessageSize 200
+
+ro -> authz: Set policy conditions (anytime)
+client -> rs: Resource request (no access token)
+rs -> client: 401 response with permission ticket, authz server location
+client -> authz: Access token (RPT) request with permission ticket, claim token (push claims)
+authz -> authz: Claim assessment: FAIL
+
+#+END_SRC
+
+#+RESULTS:
+[[file:img/uma.png]]
+
+
+
+* Решение авторизации
+
+** Casbin
+
+Универсальная библиотека для поддержки access control с лицензией Apache 2.0
+
+- Источник пользователей - внешний
+- Авторизация - внешняя
+
+*** Общие характеристики
+- сайт: https://github.com/casbin/casbin
+- языки: Go (язык реализации), биндинги: Java, Node.js, PHP, Python, C#, Rust (experimental)
+- Поддерживаемые модели:
+  + ACL
+  + [[RBAC][RBAC]] с ресурсами и ролями
+  + [[ABAC][ABAC]]
+
+- Поддерживается RESTful API и приоритет правил.
+
+*** Конфигурация
+Модель прав доступа специфицируется конфигурационным файлом по метамодели PERM
