@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2019-12-23 Пн 18:26 -->
+<!-- 2019-12-24 Вт 20:26 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Обзор систем авторизации OAuth + UMA Protocol flow</title>
@@ -253,53 +253,141 @@ for the JavaScript code in this tag.
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#org8ecdbad">1. Решение авторизации</a>
+<li><a href="#org1892942">1. Решения авторизации</a>
 <ul>
-<li><a href="#org7d83f6c">1.1. Keycloak</a>
+<li><a href="#org06b75d0">1.1. Shiro</a>
 <ul>
-<li><a href="#org3b18e72">1.1.1. <span class="todo TODO">TODO</span> Написать тестовое приложение на Spring, работающее с Keycloak, в котором регулируются права доступа вплоть до отдельной записи в БД</a></li>
+<li><a href="#org7fa1d7f">1.1.1. Механизм аунтетификации</a></li>
+<li><a href="#org9e49965">1.1.2. Механизм авторизации</a></li>
 </ul>
 </li>
-<li><a href="#orgaf9fe99">1.2. ORY/Ladon</a></li>
-<li><a href="#org314c2cb">1.3. Casbin</a>
+<li><a href="#org289a6af">1.2. Keycloak</a>
 <ul>
-<li><a href="#orgfb12b6a">1.3.1. Про реализацию пока не думаю, основные руководства на китайском. Начну с Ladon и потом keycloak (или наоборот).</a></li>
-<li><a href="#org6b8319d">1.3.2. Общие характеристики</a></li>
-<li><a href="#orgfd56e31">1.3.3. Конфигурация</a></li>
+<li><a href="#org64fa72d">1.2.1. <span class="todo TODO">TODO</span> Написать тестовое приложение на Spring, работающее с Keycloak, в котором регулируются права доступа вплоть до отдельной записи в БД</a></li>
 </ul>
 </li>
-</ul>
-</li>
-<li><a href="#orga1d90e4">2. Модель контроля доступа</a>
+<li><a href="#orgc055b7f">1.3. ORY/Ladon</a></li>
+<li><a href="#org5011306">1.4. Casbin</a>
 <ul>
-<li><a href="#org6ba6bc0">2.1. DAC (Discretionary Access Control)</a></li>
-<li><a href="#orgb005052">2.2. MAC (Mandatory Access Control)</a></li>
-<li><a href="#org5fc2380">2.3. RBAC (Role-Based Access Control)</a></li>
-<li><a href="#org01edc42">2.4. ABAC (Attribute-Based Access Control)</a></li>
-<li><a href="#org1728965">2.5. PERM</a></li>
-</ul>
-</li>
-<li><a href="#orgf6babc5">3. Авторизация</a>
-<ul>
-<li><a href="#org1722d4a">3.1. OAuth 2.0</a>
-<ul>
-<li><a href="#org1b8cf6b">3.1.1. Определения на схеме:</a></li>
+<li><a href="#org886fe7e">1.4.1. Про реализацию пока не думаю, основные руководства на китайском. Начну с Ladon и потом keycloak (или наоборот).</a></li>
+<li><a href="#org23208e8">1.4.2. Общие характеристики</a></li>
+<li><a href="#orge3f4b04">1.4.3. Конфигурация</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a href="#orgc6ef46f">4. Ссылки</a></li>
+<li><a href="#org58091ac">2. Модель контроля доступа</a>
+<ul>
+<li><a href="#org3b0a899">2.1. DAC (Discretionary Access Control)</a></li>
+<li><a href="#orgbe851c8">2.2. MAC (Mandatory Access Control)</a></li>
+<li><a href="#org8eae90b">2.3. RBAC (Role-Based Access Control)</a></li>
+<li><a href="#orgf95d235">2.4. ABAC (Attribute-Based Access Control)</a></li>
+<li><a href="#org28e61ae">2.5. PERM</a></li>
+</ul>
+</li>
+<li><a href="#org73b58c0">3. Авторизация</a>
+<ul>
+<li><a href="#org7fa3f4e">3.1. OAuth 2.0</a>
+<ul>
+<li><a href="#org3565b4b">3.1.1. Определения на схеме:</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#orgf87c79f">4. Предлагаемое решение: Shiro</a>
+<ul>
+<li><a href="#org8685f50">4.1. Плюсы</a></li>
+<li><a href="#orgc6d161d">4.2. Минусы</a>
+<ul>
+<li><a href="#orgc2036ce">4.2.1. Обработка permissions по умолчанию (выдержка из исходного кода)</a></li>
+</ul>
+</li>
+<li><a href="#orga5ae532">4.3. Демо-проект</a>
+<ul>
+<li><a href="#org757cf40">4.3.1. shiro-users.properties</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#org04fcf1d">5. Другие ссылки по теме</a></li>
 </ul>
 </div>
 </div>
 
-<div id="outline-container-org8ecdbad" class="outline-2">
-<h2 id="org8ecdbad"><span class="section-number-2">1</span> Решение авторизации</h2>
+<div id="outline-container-org1892942" class="outline-2">
+<h2 id="org1892942"><span class="section-number-2">1</span> Решения авторизации</h2>
 <div class="outline-text-2" id="text-1">
 </div>
-<div id="outline-container-org7d83f6c" class="outline-3">
-<h3 id="org7d83f6c"><span class="section-number-3">1.1</span> Keycloak</h3>
+<div id="outline-container-org06b75d0" class="outline-3">
+<h3 id="org06b75d0"><span class="section-number-3">1.1</span> Shiro</h3>
 <div class="outline-text-3" id="text-1-1">
+<ul class="org-ul">
+<li>Сайт: <a href="https://shiro.apache.org">https://shiro.apache.org</a></li>
+<li>Java, лицензия Apache2</li>
+<li>OAuth2 поддерживается отдельным решением: <a href="https://github.com/bujiio/buji-pac4j">https://github.com/bujiio/buji-pac4j</a></li>
+<li>Источник данных о пользователях - любой: для этого надо реализовать интерфейс <a href="https://shiro.apache.org/realm.html">Realm</a>.</li>
+<li>Хорошая документация</li>
+<li>RBAC и item-based permissions</li>
+</ul>
+</div>
+
+<div id="outline-container-org7fa1d7f" class="outline-4">
+<h4 id="org7fa1d7f"><span class="section-number-4">1.1.1</span> Механизм аунтетификации</h4>
+<div class="outline-text-4" id="text-1-1-1">
+<p>
+<b>Subject</b> - принятый термин для пользователя
+</p>
+
+
+<div class="figure">
+<p><img src="./img/ShiroAuthenticationSequence.png" alt="ShiroAuthenticationSequence.png" />
+</p>
+</div>
+
+<ol class="org-ol">
+<li>Приложение вызывает <code>Subject.login</code> с аргументом типа <code>AuthenticationToken</code> (<code>token</code>)</li>
+<li>экземпляр <code>Subject</code> вызывает <code>SecurityManager.login</code> с этим аргументом</li>
+<li><code>SecurityManager</code> вызывает <code>Authenticator.authenticate(token)</code></li>
+<li><code>Authenticator</code> выбирает <code>Realm</code> (источник данных о пользователе) и вызывает его, используя сконфигурированную <code>AuthenticationStrategy</code>.</li>
+<li>Каждый из доступных <code>Realm</code>'ов сообщает, поддерживает ли он <code>token</code> данного типа, и если да, то для него вызывается <code>getAuthenticationInfo(token)</code>, в котором производится попытка аунтетификации.</li>
+</ol>
+</div>
+
+
+<ol class="org-ol">
+<li><a id="org4a23e04"></a>AuthenticationStrategy<br />
+<div class="outline-text-5" id="text-1-1-1-1">
+<p>
+Определяет, нужно ли аунтетифицировать по всем Realm или только по одному до первой успешной аунтетификации, и так далее.
+</p>
+</div>
+</li>
+</ol>
+</div>
+
+<div id="outline-container-org9e49965" class="outline-4">
+<h4 id="org9e49965"><span class="section-number-4">1.1.2</span> Механизм авторизации</h4>
+<div class="outline-text-4" id="text-1-1-2">
+<p>
+Когда вызывается метод <code>Subject.isPermitted()</code> или <code>Subject.checkPermission()</code>
+</p>
+
+<ol class="org-ol">
+<li><code>Subject</code> делегирует в <code>SecurityManager</code></li>
+<li><code>SecurityManager</code> делегирует в <code>Authorizer</code></li>
+<li><code>Authorizer</code> опрашивает <code>Realm</code>'ы:
+a. <code>Realm</code> Получает все Permissions и аггрегирует результат, затем делает wildcard matching.</li>
+</ol>
+</div>
+</div>
+</div>
+
+
+
+
+<div id="outline-container-org289a6af" class="outline-3">
+<h3 id="org289a6af"><span class="section-number-3">1.2</span> Keycloak</h3>
+<div class="outline-text-3" id="text-1-2">
 <ul class="org-ul">
 <li>Java</li>
 <li><a href="https://www.keycloak.org/docs/latest/authorization_services/">Руководство.</a></li>
@@ -310,14 +398,14 @@ for the JavaScript code in this tag.
 </p>
 </div>
 
-<div id="outline-container-org3b18e72" class="outline-4">
-<h4 id="org3b18e72"><span class="section-number-4">1.1.1</span> <span class="todo TODO">TODO</span> Написать тестовое приложение на Spring, работающее с Keycloak, в котором регулируются права доступа вплоть до отдельной записи в БД</h4>
+<div id="outline-container-org64fa72d" class="outline-4">
+<h4 id="org64fa72d"><span class="section-number-4">1.2.1</span> <span class="todo TODO">TODO</span> Написать тестовое приложение на Spring, работающее с Keycloak, в котором регулируются права доступа вплоть до отдельной записи в БД</h4>
 </div>
 </div>
 
-<div id="outline-container-orgaf9fe99" class="outline-3">
-<h3 id="orgaf9fe99"><span class="section-number-3">1.2</span> ORY/Ladon</h3>
-<div class="outline-text-3" id="text-1-2">
+<div id="outline-container-orgc055b7f" class="outline-3">
+<h3 id="orgc055b7f"><span class="section-number-3">1.3</span> ORY/Ladon</h3>
+<div class="outline-text-3" id="text-1-3">
 <ul class="org-ul">
 <li>Golang</li>
 <li>Совместим с OAuth2/UMA</li>
@@ -327,13 +415,13 @@ for the JavaScript code in this tag.
 </div>
 </div>
 
-<div id="outline-container-org314c2cb" class="outline-3">
-<h3 id="org314c2cb"><span class="section-number-3">1.3</span> Casbin</h3>
-<div class="outline-text-3" id="text-1-3">
+<div id="outline-container-org5011306" class="outline-3">
+<h3 id="org5011306"><span class="section-number-3">1.4</span> Casbin</h3>
+<div class="outline-text-3" id="text-1-4">
 </div>
-<div id="outline-container-orgfb12b6a" class="outline-4">
-<h4 id="orgfb12b6a"><span class="section-number-4">1.3.1</span> Про реализацию пока не думаю, основные руководства на китайском. Начну с Ladon и потом keycloak (или наоборот).</h4>
-<div class="outline-text-4" id="text-1-3-1">
+<div id="outline-container-org886fe7e" class="outline-4">
+<h4 id="org886fe7e"><span class="section-number-4">1.4.1</span> Про реализацию пока не думаю, основные руководства на китайском. Начну с Ladon и потом keycloak (или наоборот).</h4>
+<div class="outline-text-4" id="text-1-4-1">
 <p>
 Универсальная библиотека для поддержки access control с лицензией Apache 2.0
 </p>
@@ -342,20 +430,24 @@ for the JavaScript code in this tag.
 <li>Источник пользователей - внешний</li>
 <li>Авторизация - внешняя</li>
 </ul>
+
+<p>
+Например, может использоваться <a href="#org06b75d0">Shiro</a>: <a href="https://github.com/jcasbin/jcasbin-shiro-plugin">https://github.com/jcasbin/jcasbin-shiro-plugin</a>
+</p>
 </div>
 </div>
 
-<div id="outline-container-org6b8319d" class="outline-4">
-<h4 id="org6b8319d"><span class="section-number-4">1.3.2</span> Общие характеристики</h4>
-<div class="outline-text-4" id="text-1-3-2">
+<div id="outline-container-org23208e8" class="outline-4">
+<h4 id="org23208e8"><span class="section-number-4">1.4.2</span> Общие характеристики</h4>
+<div class="outline-text-4" id="text-1-4-2">
 <ul class="org-ul">
 <li>сайт: <a href="https://github.com/casbin/casbin">https://github.com/casbin/casbin</a></li>
 <li>языки: Go (язык реализации), биндинги: Java, Node.js, PHP, Python, C#, Rust (experimental)</li>
 <li>Поддерживаемые модели:
 <ul class="org-ul">
 <li>ACL</li>
-<li><a href="#orga5e29f2">RBAC</a> с ресурсами и ролями</li>
-<li><a href="#orgcb4384a">ABAC</a></li>
+<li><a href="#org2fcd1b9">RBAC</a> с ресурсами и ролями</li>
+<li><a href="#org7400f95">ABAC</a></li>
 </ul></li>
 
 <li>Поддерживается RESTful API и приоритет правил.</li>
@@ -363,9 +455,9 @@ for the JavaScript code in this tag.
 </div>
 </div>
 
-<div id="outline-container-orgfd56e31" class="outline-4">
-<h4 id="orgfd56e31"><span class="section-number-4">1.3.3</span> Конфигурация</h4>
-<div class="outline-text-4" id="text-1-3-3">
+<div id="outline-container-orge3f4b04" class="outline-4">
+<h4 id="orge3f4b04"><span class="section-number-4">1.4.3</span> Конфигурация</h4>
+<div class="outline-text-4" id="text-1-4-3">
 <p>
 Модель прав доступа специфицируется конфигурационным файлом по метамодели PERM
 </p>
@@ -373,21 +465,21 @@ for the JavaScript code in this tag.
 </div>
 </div>
 </div>
-<div id="outline-container-orga1d90e4" class="outline-2">
-<h2 id="orga1d90e4"><span class="section-number-2">2</span> Модель контроля доступа</h2>
+<div id="outline-container-org58091ac" class="outline-2">
+<h2 id="org58091ac"><span class="section-number-2">2</span> Модель контроля доступа</h2>
 <div class="outline-text-2" id="text-2">
 </div>
-<div id="outline-container-org6ba6bc0" class="outline-3">
-<h3 id="org6ba6bc0"><span class="section-number-3">2.1</span> DAC (Discretionary Access Control)</h3>
+<div id="outline-container-org3b0a899" class="outline-3">
+<h3 id="org3b0a899"><span class="section-number-3">2.1</span> DAC (Discretionary Access Control)</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
-<a id="org7a7640b"></a> - модель контроля доступа, который может быть передан субъектом другим субъектам. Например, <span class="underline">владелец</span> файлов в UNIX может передать права на файлы другим субъектам.
+<a id="org9c6ad22"></a> - модель контроля доступа, который может быть передан субъектом другим субъектам. Например, <span class="underline">владелец</span> файлов в UNIX может передать права на файлы другим субъектам.
 </p>
 </div>
 </div>
 
-<div id="outline-container-orgb005052" class="outline-3">
-<h3 id="orgb005052"><span class="section-number-3">2.2</span> MAC (Mandatory Access Control)</h3>
+<div id="outline-container-orgbe851c8" class="outline-3">
+<h3 id="orgbe851c8"><span class="section-number-3">2.2</span> MAC (Mandatory Access Control)</h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
 Модель контроля доступа, в которой реализация запрещает субъектам передавать права доступа. Права доступа определяются администратором системы.
@@ -397,18 +489,18 @@ for the JavaScript code in this tag.
 
 
 
-<div id="outline-container-org5fc2380" class="outline-3">
-<h3 id="org5fc2380"><span class="section-number-3">2.3</span> RBAC (Role-Based Access Control)</h3>
+<div id="outline-container-org8eae90b" class="outline-3">
+<h3 id="org8eae90b"><span class="section-number-3">2.3</span> RBAC (Role-Based Access Control)</h3>
 <div class="outline-text-3" id="text-2-3">
 
-<div id="org0ea0c64" class="figure">
+<div id="org486d484" class="figure">
 <p><img src="./img/rbac.jpg" alt="rbac.jpg" />
 </p>
-<p><span class="figure-number">Figure 1: </span>RBAC</p>
+<p><span class="figure-number">Figure 2: </span>RBAC</p>
 </div>
 
 <p>
-<a id="orga5e29f2"></a> - модель контроля доступа, в которой доступ к операции  производится на основании того, содержит ли роль субъекта соответствующую привилегию.
+<a id="org2fcd1b9"></a> - модель контроля доступа, в которой доступ к операции  производится на основании того, содержит ли роль субъекта соответствующую привилегию.
 </p>
 
 <p>
@@ -423,11 +515,11 @@ for the JavaScript code in this tag.
 
 
 
-<div id="outline-container-org01edc42" class="outline-3">
-<h3 id="org01edc42"><span class="section-number-3">2.4</span> ABAC (Attribute-Based Access Control)</h3>
+<div id="outline-container-orgf95d235" class="outline-3">
+<h3 id="orgf95d235"><span class="section-number-3">2.4</span> ABAC (Attribute-Based Access Control)</h3>
 <div class="outline-text-3" id="text-2-4">
 <p>
-<a id="orgcb4384a"></a> - модель контроля доступа, в которой во внимание принимаются свойства (атрибуты) субъекта или объекта, а также свойства окружения (дата, время доступа).
+<a id="org7400f95"></a> - модель контроля доступа, в которой во внимание принимаются свойства (атрибуты) субъекта или объекта, а также свойства окружения (дата, время доступа).
 </p>
 
 
@@ -446,8 +538,8 @@ for the JavaScript code in this tag.
 </div>
 </div>
 
-<div id="outline-container-org1728965" class="outline-3">
-<h3 id="org1728965"><span class="section-number-3">2.5</span> PERM</h3>
+<div id="outline-container-org28e61ae" class="outline-3">
+<h3 id="org28e61ae"><span class="section-number-3">2.5</span> PERM</h3>
 <div class="outline-text-3" id="text-2-5">
 <p>
 Policy, Effect, Request, Matchers.
@@ -458,12 +550,12 @@ Policy, Effect, Request, Matchers.
 
 
 
-<div id="outline-container-orgf6babc5" class="outline-2">
-<h2 id="orgf6babc5"><span class="section-number-2">3</span> Авторизация</h2>
+<div id="outline-container-org73b58c0" class="outline-2">
+<h2 id="org73b58c0"><span class="section-number-2">3</span> Авторизация</h2>
 <div class="outline-text-2" id="text-3">
 </div>
-<div id="outline-container-org1722d4a" class="outline-3">
-<h3 id="org1722d4a"><span class="section-number-3">3.1</span> OAuth 2.0</h3>
+<div id="outline-container-org7fa3f4e" class="outline-3">
+<h3 id="org7fa3f4e"><span class="section-number-3">3.1</span> OAuth 2.0</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
 Повсеместно используемое решение для авторизации - OAuth 2.0
@@ -505,8 +597,8 @@ Policy, Effect, Request, Matchers.
 </div>
 </div>
 
-<div id="outline-container-org1b8cf6b" class="outline-4">
-<h4 id="org1b8cf6b"><span class="section-number-4">3.1.1</span> Определения на схеме:</h4>
+<div id="outline-container-org3565b4b" class="outline-4">
+<h4 id="org3565b4b"><span class="section-number-4">3.1.1</span> Определения на схеме:</h4>
 <div class="outline-text-4" id="text-3-1-1">
 <ul class="org-ul">
 <li>Requesting party - браузер</li>
@@ -522,9 +614,118 @@ Policy, Effect, Request, Matchers.
 </div>
 </div>
 
-<div id="outline-container-orgc6ef46f" class="outline-2">
-<h2 id="orgc6ef46f"><span class="section-number-2">4</span> Ссылки</h2>
+
+<div id="outline-container-orgf87c79f" class="outline-2">
+<h2 id="orgf87c79f"><span class="section-number-2">4</span> Предлагаемое решение: Shiro</h2>
 <div class="outline-text-2" id="text-4">
+</div>
+<div id="outline-container-org8685f50" class="outline-3">
+<h3 id="org8685f50"><span class="section-number-3">4.1</span> Плюсы</h3>
+<div class="outline-text-3" id="text-4-1">
+<ul class="org-ul">
+<li><a href="#org06b75d0">Модульная архитектура</a> - позволяет подключить OAuth2, если это будет нужно (например, если приложение авторизации будет лишь авторизирующим микросервисом)</li>
+<li>Возможность регулировки доступа вплоть до отдельной записи в БД:</li>
+</ul>
+<div class="org-src-container">
+<pre class="src src-java"><span style="color: #5f615c; font-style: italic;">//</span><span style="color: #5f615c; font-style: italic;">&#1045;&#1089;&#1083;&#1080; &#1074;&#1099;&#1076;&#1072;&#1090;&#1100; permission troopers:update:0, &#1090;&#1086; &#1086;&#1073;&#1085;&#1086;&#1074;&#1083;&#1103;&#1090;&#1100; &#1096;&#1090;&#1091;&#1088;&#1084;&#1086;&#1074;&#1080;&#1082;&#1072; &#8470;0 &#1073;&#1091;&#1076;&#1077;&#1090; &#1084;&#1086;&#1078;&#1085;&#1086;</span>
+<span style="color: #204a87; font-weight: bold;">@PostMapping</span>(path = <span style="color: #5c3566; font-style: italic;">"/{id}"</span>)
+    <span style="color: #346604; font-weight: bold;">public</span> <span style="color: #204a87; font-weight: bold;">Stormtrooper</span> <span style="color: #a40000; font-weight: bold;">updateTrooper</span>(<span style="color: #204a87; font-weight: bold;">@PathVariable</span>(<span style="color: #5c3566; font-style: italic;">"id"</span>) <span style="color: #204a87; font-weight: bold;">String</span> <span style="color: #b35000;">id</span>, <span style="color: #204a87; font-weight: bold;">@RequestBody</span> <span style="color: #204a87; font-weight: bold;">Stormtrooper</span> <span style="color: #b35000;">updatedTrooper</span>) <span style="color: #346604; font-weight: bold;">throws</span> <span style="color: #204a87; font-weight: bold;">NotFoundException</span> {
+        <span style="color: #5f615c; font-style: italic;">// </span><span style="color: #5f615c; font-style: italic;">Instance-based annotations are not supported, so we use direct check instead:</span>
+        SecurityUtils.getSubject().checkPermission(String.format(<span style="color: #5c3566; font-style: italic;">"troopers:update:%s"</span>, id));
+        <span style="color: #346604; font-weight: bold;">return</span> trooperDao.updateStormtrooper(id, updatedTrooper);
+    }
+
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgc6d161d" class="outline-3">
+<h3 id="orgc6d161d"><span class="section-number-3">4.2</span> Минусы</h3>
+<div class="outline-text-3" id="text-4-2">
+<ul class="org-ul">
+<li>Медленная проверка permissions - O(n) в худшем случае:</li>
+</ul>
+</div>
+
+<div id="outline-container-orgc2036ce" class="outline-4">
+<h4 id="orgc2036ce"><span class="section-number-4">4.2.1</span> Обработка permissions по умолчанию (выдержка из исходного кода)</h4>
+<div class="outline-text-4" id="text-4-2-1">
+<div class="org-src-container">
+<pre class="src src-java"><span style="color: #5f615c; font-style: italic;">//</span><span style="color: #5f615c; font-style: italic;">visibility changed from private to protected per SHIRO-332</span>
+ <span style="color: #346604; font-weight: bold;">protected</span> <span style="color: #204a87; font-weight: bold;">boolean</span> <span style="color: #a40000; font-weight: bold;">isPermitted</span>(<span style="color: #204a87; font-weight: bold;">Permission</span> <span style="color: #b35000;">permission</span>, <span style="color: #204a87; font-weight: bold;">AuthorizationInfo</span> <span style="color: #b35000;">info</span>) {
+     <span style="color: #204a87; font-weight: bold;">Collection</span>&lt;<span style="color: #204a87; font-weight: bold;">Permission</span>&gt; <span style="color: #b35000;">perms</span> = getPermissions(info);
+     <span style="color: #346604; font-weight: bold;">if</span> (perms != <span style="color: #204a87; font-weight: bold;">null</span> &amp;&amp; !perms.isEmpty()) {
+         <span style="color: #346604; font-weight: bold;">for</span> (<span style="color: #204a87; font-weight: bold;">Permission</span> <span style="color: #b35000;">perm</span> : perms) {
+             <span style="color: #346604; font-weight: bold;">if</span> (perm.implies(permission)) {
+                 <span style="color: #346604; font-weight: bold;">return</span> <span style="color: #204a87; font-weight: bold;">true</span>;
+             }
+         }
+     }
+     <span style="color: #346604; font-weight: bold;">return</span> <span style="color: #204a87; font-weight: bold;">false</span>;
+ }
+</pre>
+</div>
+
+<p>
+Исправление: perm.implies использует wildcards. Возможно, стоит использовать более хитрую схему с хэш-таблицей (впрочем, данная реализация все равно единоразово подгружает все в память)
+</p>
+
+<p>
+Источник данных JDBC реализован в классе JDBCRealm и его можно изменить
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orga5ae532" class="outline-3">
+<h3 id="orga5ae532"><span class="section-number-3">4.3</span> Демо-проект</h3>
+<div class="outline-text-3" id="text-4-3">
+<p>
+<a href="https://github.com/pashazz/shiro-example">https://github.com/pashazz/shiro-example</a>
+</p>
+
+<p>
+База данных штурмовиков из Звездных Войн. Сами штурмовики хранятся в памяти (hardcoded)
+</p>
+
+<ul class="org-ul">
+<li>Использует Spring Boot</li>
+<li>Информация о пользователях в файле src/main/resources/shiro-users.properties</li>
+<li>В данном примере вы сможете обновить штурмовика #0 с помощью пользователя jcoder, но других - не сможете</li>
+</ul>
+</div>
+
+<div id="outline-container-org757cf40" class="outline-4">
+<h4 id="org757cf40"><span class="section-number-4">4.3.1</span> shiro-users.properties</h4>
+<div class="outline-text-4" id="text-4-3-1">
+<div class="org-src-container">
+<pre class="src src-conf"><span style="color: #5f615c; font-style: italic;"># </span><span style="color: #5f615c; font-style: italic;">&#1055;&#1086;&#1083;&#1100;&#1079;&#1086;&#1074;&#1072;&#1090;&#1077;&#1083;&#1080; &#1085;&#1072;&#1095;&#1080;&#1085;&#1072;&#1102;&#1090;&#1089;&#1103; &#1089; user.</span>
+<span style="color: #5f615c; font-style: italic;"># </span><span style="color: #5f615c; font-style: italic;">&#1057;&#1085;&#1072;&#1095;&#1072;&#1083;&#1072; &#1080;&#1076;&#1077;&#1090; &#1087;&#1072;&#1088;&#1086;&#1083;&#1100;, &#1087;&#1086;&#1090;&#1086;&#1084; &#1088;&#1086;&#1083;&#1080; &#1095;&#1077;&#1088;&#1077;&#1079; &#1079;&#1072;&#1087;&#1103;&#1090;&#1091;&#1102;</span>
+
+
+<span style="color: #b35000;">user.root</span> = secret,admin
+<span style="color: #b35000;">user.emperor</span> = secret,emperor
+<span style="color: #b35000;">user.officer</span> = secret,officer
+<span style="color: #b35000;">user.jcoder</span> = secret,underling
+
+<span style="color: #5f615c; font-style: italic;"># </span><span style="color: #5f615c; font-style: italic;">&#1056;&#1086;&#1083;&#1080; &#1085;&#1072;&#1095;&#1080;&#1085;&#1072;&#1102;&#1090;&#1089;&#1103; &#1089; role.</span>
+<span style="color: #5f615c; font-style: italic;"># </span><span style="color: #5f615c; font-style: italic;">&#1056;&#1086;&#1083;&#1080; &#1087;&#1086;&#1076;&#1076;&#1077;&#1088;&#1078;&#1080;&#1074;&#1072;&#1102;&#1090; wildcards</span>
+<span style="color: #5f615c; font-style: italic;"># </span><span style="color: #5f615c; font-style: italic;">&#1052;&#1086;&#1078;&#1085;&#1086; &#1088;&#1072;&#1079;&#1088;&#1077;&#1096;&#1080;&#1090;&#1100; &#1076;&#1077;&#1081;&#1089;&#1090;&#1074;&#1080;&#1103; &#1090;&#1086;&#1083;&#1100;&#1082;&#1086; &#1085;&#1072; &#1086;&#1073;&#1098;&#1077;&#1082;&#1090;&#1072;&#1093; &#1089; &#1086;&#1087;&#1088;&#1077;&#1076;&#1077;&#1083;&#1077;&#1085;&#1085;&#1099;&#1084; id</span>
+<span style="color: #b35000;">role.emperor</span> = *
+<span style="color: #b35000;">role.admin</span> = troopers:*
+<span style="color: #b35000;">role.officer</span> = troopers:create, troopers:read, troopers:update
+<span style="color: #b35000;">role.underling</span> = troopers:read, troopers:update:0
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org04fcf1d" class="outline-2">
+<h2 id="org04fcf1d"><span class="section-number-2">5</span> Другие ссылки по теме</h2>
+<div class="outline-text-2" id="text-5">
 <ul class="org-ul">
 <li>про реализацию RBAC на Rest <a href="https://cloudify.co/blog/simple-secure-role-based-access-control-rest-api-rbac-server-devops-cloud-orchestration/">https://cloudify.co/blog/simple-secure-role-based-access-control-rest-api-rbac-server-devops-cloud-orchestration/</a></li>
 <li>Filter output: <a href="https://www.baeldung.com/spring-security-role-filter-json">https://www.baeldung.com/spring-security-role-filter-json</a></li>
@@ -535,7 +736,7 @@ Policy, Effect, Request, Matchers.
 </div>
 <div id="postamble" class="status">
 <p class="author">Author: pasha</p>
-<p class="date">Created: 2019-12-23 Пн 18:26</p>
+<p class="date">Created: 2019-12-24 Вт 20:26</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

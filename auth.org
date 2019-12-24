@@ -1,7 +1,43 @@
 #+SETUPFILE:  https://fniessen.github.io/org-html-themes/setup/theme-readtheorg.setup
 #+TITLE: Обзор систем авторизации
 
-* Решение авторизации
+* Решения авторизации
+
+** Shiro
++ Сайт: https://shiro.apache.org
++ Java, лицензия Apache2
++ OAuth2 поддерживается отдельным решением: https://github.com/bujiio/buji-pac4j
++ Источник данных о пользователях - любой: для этого надо реализовать интерфейс [[https://shiro.apache.org/realm.html][Realm]].
++ Хорошая документация
++ RBAC и item-based permissions
+
+*** Механизм аунтетификации
+
+*Subject* - принятый термин для пользователя
+
+[[./img/ShiroAuthenticationSequence.png]]
+
+1. Приложение вызывает ~Subject.login~ с аргументом типа ~AuthenticationToken~ (~token~)
+2. экземпляр ~Subject~ вызывает ~SecurityManager.login~ с этим аргументом
+3. ~SecurityManager~ вызывает ~Authenticator.authenticate(token)~
+4. ~Authenticator~ выбирает ~Realm~ (источник данных о пользователе) и вызывает его, используя сконфигурированную ~AuthenticationStrategy~.
+5. Каждый из доступных ~Realm~'ов сообщает, поддерживает ли он ~token~ данного типа, и если да, то для него вызывается ~getAuthenticationInfo(token)~, в котором производится попытка аунтетификации.
+
+
+**** AuthenticationStrategy
+Определяет, нужно ли аунтетифицировать по всем Realm или только по одному до первой успешной аунтетификации, и так далее.
+
+*** Механизм авторизации
+
+Когда вызывается метод ~Subject.isPermitted()~ или ~Subject.checkPermission()~
+
+1. ~Subject~ делегирует в ~SecurityManager~
+2. ~SecurityManager~ делегирует в ~Authorizer~
+3. ~Authorizer~ опрашивает ~Realm~'ы:
+   a. ~Realm~ Получает все Permissions и аггрегирует результат, затем делает wildcard matching.
+
+
+
 
 ** Keycloak
 + Java
@@ -26,6 +62,8 @@
 
 - Источник пользователей - внешний
 - Авторизация - внешняя
+
+Например, может использоваться [[Shiro][Shiro]]: https://github.com/jcasbin/jcasbin-shiro-plugin
 
 *** Общие характеристики
 - сайт: https://github.com/casbin/casbin
@@ -142,7 +180,78 @@ rs -> client: Protected resource
 + claim - запрос, представляющий требуемые атрибуты запрашиваемого ресурса/ов.
 + persisted claims token - токен, позволяющий много раз использовать набор claims для авторизации.
 
-* Ссылки
+
+* Предлагаемое решение: Shiro
+
+** Плюсы
+
++ [[Shiro][Модульная архитектура]] - позволяет подключить OAuth2, если это будет нужно (например, если приложение авторизации будет лишь авторизирующим микросервисом)
++ Возможность регулировки доступа вплоть до отдельной записи в БД:
+#+begin_src java
+//Если выдать permission troopers:update:0, то обновлять штурмовика №0 будет можно
+@PostMapping(path = "/{id}")
+    public Stormtrooper updateTrooper(@PathVariable("id") String id, @RequestBody Stormtrooper updatedTrooper) throws NotFoundException {
+        // Instance-based annotations are not supported, so we use direct check instead:
+        SecurityUtils.getSubject().checkPermission(String.format("troopers:update:%s", id));
+        return trooperDao.updateStormtrooper(id, updatedTrooper);
+    }
+
+#+end_src
+
+** Минусы
+
++  Медленная проверка permissions - O(n) в худшем случае:
+
+*** Обработка permissions по умолчанию (выдержка из исходного кода)
+#+begin_src java
+   //visibility changed from private to protected per SHIRO-332
+    protected boolean isPermitted(Permission permission, AuthorizationInfo info) {
+        Collection<Permission> perms = getPermissions(info);
+        if (perms != null && !perms.isEmpty()) {
+            for (Permission perm : perms) {
+                if (perm.implies(permission)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+#+end_src
+
+Исправление: perm.implies использует wildcards. Возможно, стоит использовать более хитрую схему с хэш-таблицей (впрочем, данная реализация все равно единоразово подгружает все в память)
+
+Источник данных JDBC реализован в классе JDBCRealm и его можно изменить
+
+** Демо-проект
+https://github.com/pashazz/shiro-example
+
+База данных штурмовиков из Звездных Войн. Сами штурмовики хранятся в памяти (hardcoded)
+
++ Использует Spring Boot
++ Информация о пользователях в файле src/main/resources/shiro-users.properties
++ В данном примере вы сможете обновить штурмовика #0 с помощью пользователя jcoder, но других - не сможете
+
+*** shiro-users.properties
+#+begin_src conf
+# Пользователи начинаются с user.
+# Сначала идет пароль, потом роли через запятую
+
+
+user.root = secret,admin
+user.emperor = secret,emperor
+user.officer = secret,officer
+user.jcoder = secret,underling
+
+# Роли начинаются с role.
+# Роли поддерживают wildcards
+# Можно разрешить действия только на объектах с определенным id
+role.emperor = *
+role.admin = troopers:*
+role.officer = troopers:create, troopers:read, troopers:update
+role.underling = troopers:read, troopers:update:0
+#+end_src
+
+* Другие ссылки по теме
 + про реализацию RBAC на Rest https://cloudify.co/blog/simple-secure-role-based-access-control-rest-api-rbac-server-devops-cloud-orchestration/
 + Filter output: https://www.baeldung.com/spring-security-role-filter-json
 + ABAC with spring security: https://dzone.com/articles/simple-attribute-based-access-control-with-spring
