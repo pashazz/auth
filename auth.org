@@ -11,7 +11,7 @@
 + Хорошая документация
 + RBAC и item-based permissions
 
-*** Механизм аунтетификации
+*** Механизм аутентификации
 
 *Subject* - принятый термин для пользователя
 
@@ -40,12 +40,14 @@
 
 
 ** Keycloak
+
++ Поддерживается RedHat
 + Java
 + [[https://www.keycloak.org/docs/latest/authorization_services/][Руководство.]]
 
+
 Совместим с OAuth2/UMA.
 
-*** TODO Написать тестовое приложение на Spring, работающее с Keycloak, в котором регулируются права доступа вплоть до отдельной записи в БД
 
 ** ORY/Ladon
 
@@ -77,6 +79,7 @@
 
 *** Конфигурация
 Модель прав доступа специфицируется конфигурационным файлом по метамодели PERM
+
 * Модель контроля доступа
 ** DAC (Discretionary Access Control)
 
@@ -218,10 +221,17 @@ rs -> client: Protected resource
     }
 #+end_src
 
+
 Исправление: perm.implies использует wildcards. Возможно, стоит использовать более хитрую схему с хэш-таблицей (впрочем, данная реализация все равно единоразово подгружает все в память)
 
 Источник данных JDBC реализован в классе JDBCRealm и его можно изменить
 
+Кроме того, можно реализовать свой класс Permission, как показано [[https://www.baeldung.com/apache-shiro-access-control][здесь]].
+
+*** Нет решения для аггрегации всех ресурсов по permission
+
+
+Задал соответствующий вопрос [[http://shiro-user.582556.n2.nabble.com/Using-Shiro-for-permission-based-resource-lookup-td7582096.html][здесь.]]
 ** Демо-проект
 https://github.com/pashazz/shiro-example
 

@@ -1,0 +1,254 @@
+#+SETUPFILE: ~/Dropbox/org/setup/beamer.org
+#+TITLE: Методы аунтетификации
+#+EMAIL: @fronium
+#+DATE:
+
+#+STARTUP: beamer
+#+STARTUP: oddeven
+
+#+LaTeX_CLASS: beamer
+
+# Beamer supports alternate themes.  Choose your favourite here
+#+BEAMER_THEME: Luebeck
+
+# the beamer exporter expects to be told which level of headlines
+# defines the frames.  We use the first level headlines for sections
+# and the second (hence H:2) for frames.
+#+OPTIONS:   H:2 toc:t
+
+* Теория: Авторизация
+
+** OAuth 2.0
+#+ATTR_ORG: :width 900
+#+ATTR_LATEX: :width 0.7\textwidth
+[[./img/oauth2.jpg]]
+
+** OAuth 2.0
+
+1. Client посылает запрос к Authorization Server (AS)
+2. Если Client не залогинен (кука нет или не валидный)
+   1. AS выдает форму логина и проверяет, что пользователь вошел правильно.
+      Источник пользователей - откуда угодно (DB, LDAP, etc)
+3. AS возвращает некоторый Token
+4. API Gateway видит запрос с Token
+5. API Gateway отправляет Token на AS
+6. Если Token верный, AS одобряет.
+
+
+Доступ к отдельным объектам (Entities) в такой модели регулируется протоколом UMA
+
+** OAuth 2.0 + UMA
+
+#+TITLE: OAuth + UMA Protocol flow
+#+BEGIN_SRC plantuml :file img/uma.png
+participant rp as "requesting party"
+participant client
+participant authz as "authorization server"
+participant  rs as "resource server"
+participant ro as "resource owner"
+
+skinparam maxMessageSize 250
+skinparam sequenceMessageAlign center
+
+ro -> authz: Set policy conditions (anytime)
+client -> rs: Resource request (no access token)
+rs -> client: 401 response with permission ticket, authz server location
+client -> authz: Access token (RPT) request with permission ticket, claim token (push claims)
+authz ->x authz: Claim assessment: FAIL (not authorized)
+authz -> client: 403 response with new permission ticket, need_info error, redirect_user hint
+client -> rp: Redirect user with permission ticket
+rp -> authz: Follow redirect to authz server
+rp <--> authz: Interactive claims gathering
+authz -> rp: Redirect back with new permission ticket
+rp -> client: Follow redirect to client
+client -> authz: RPT request with permission ticket
+authz -> authz: Claim assessment: OK
+authz -> client: Response with RPT and PCT
+client -> rs: Response request with RPT
+rs -> client: Protected resource
+#+END_SRC
+
+#+RESULTS:
+#+ATTR_LATEX: :width 0.7\textwidth
+[[file:img/uma.png]]
+
+*** Определения на схеме:
++ Requesting party - браузер
++ client - клиент, который хочет получить доступ к определенному ресурсу (часть веб-приложения или сам requesting party)
++ RPT - requesting party token - токен доступа OAuth
++ permission - авторизация доступа к определенному ресурсу с некоторому набором прав (scopes), привязанных к ресурсу
++ permission ticket - handle, представляющий запрошенные права доступа (permissions), необходимый в запросах к серверу авторизации
++ claim - запрос, представляющий требуемые атрибуты запрашиваемого ресурса/ов.
++ persisted claims token - токен, позволяющий много раз использовать набор claims для авторизации.
+
+
+* Теория: Примеры моделей контроля доступа
+** DAC (Discretionary Access Control)
+
++ модель контроля доступа, который может быть передан субъектом другим субъектам. Например, _владелец_ файлов в UNIX может передать права на файлы другим субъектам.
+
+** MAC (Mandatory Access Control)
+
++ модель контроля доступа, в которой реализация запрещает субъектам передавать права доступа. Права доступа определяются администратором системы.
+
+
+
+** RBAC (Role-Based Access Control)
+
+#+ATTR_LATEX:  :width 0.6\textwidth
+[[./img/rbac.jpg]]
+
++ Модель контроля доступа, в которой доступ к операции  производится на основании того, содержит ли роль субъекта соответствующую привилегию.
+
++ Роль - множество привилегий, доступных пользователям
+
++ Субъекту может быть присвоено несколько (0...n) ролей. Роли может быть присвоено несколько привилегий.
+
+
+
+** ABAC (Attribute-Based Access Control)
+во внимание принимаются свойства (атрибуты) субъекта или объекта, а также свойства окружения (дата, время доступа).
+
+#+ATTR_LATEX:  :width 0.5\textwidth
+[[./img/abac.jpg]]
+Например:
++ Пользователь(sub) может просмотреть документ(obj), если он(obj) создан коллегами из того же департамента
++ Пользователь(sub) может редактировать документ(obj), если он(subj) создал его(obj) и установлен режим черновика(obj).
+
+* Рассмотренные решения
+
+** Shiro
++ Сайт: https://shiro.apache.org
++ Java, лицензия Apache2
++ OAuth2 поддерживается отдельным решением: https://github.com/bujiio/buji-pac4j
++ Источник данных о пользователях - любой: для этого надо реализовать интерфейс [[https://shiro.apache.org/realm.html][Realm]].
++ Хорошая документация
++ RBAC и item-based permissions (механизм авторизации - любой, прописывается в Java-коде)
+** Shiro: Механизм аутентификации
+
+*Subject* - принятый термин для пользователя
+
+[[./img/ShiroAuthenticationSequence.png]]
+
+** Shiro: Механизм аутентификации
+1. Приложение вызывает ~Subject.login~ с аргументом типа ~AuthenticationToken~ (~token~)
+2. экземпляр ~Subject~ вызывает ~SecurityManager.login~ с этим аргументом
+3. ~SecurityManager~ вызывает ~Authenticator.authenticate(token)~
+4. ~Authenticator~ выбирает ~Realm~ (источник данных о пользователе) и вызывает его, используя сконфигурированную ~AuthenticationStrategy~.
+5. Каждый из доступных ~Realm~'ов сообщает, поддерживает ли он ~token~ данного типа, и если да, то для него вызывается ~getAuthenticationInfo(token)~, в котором производится попытка аунтетификации.
+
+** Shiro: Механизм авторизации
+
+**** AuthenticationStrategy
+Определяет, нужно ли аунтетифицировать по всем Realm или только по одному до первой успешной аунтетификации, и так далее.
+
+*** Механизм авторизации
+
+Когда вызывается метод ~Subject.isPermitted()~ или ~Subject.checkPermission()~
+
+1. ~Subject~ делегирует в ~SecurityManager~
+2. ~SecurityManager~ делегирует в ~Authorizer~
+3. ~Authorizer~ опрашивает ~Realm~'ы:
+   a. ~Realm~ Получает все Permissions и аггрегирует результат, затем делает wildcard matching.
+
+
+
+** Shiro: минусы
+
++ Отлично подходит для авторизации доступа, но нет возможности программно получить  все объекты, к которым пользователь имеет доступ
++ В списке рассылки предложили организовать получение всех объектов через свою базу данных (свой интерфейс Realm) - поэтому это решение было отклонено
++ Нет поддержки OAuth2 из коробки
+
+** Keycloak
+
++ "Коробочное решение" для авторизации с интерфейсом админа,  поддерживаемое RedHat
++ Правила доступа интегрируются в Spring Boot "из коробки" с несколькими строчками конфига =application.properties=
++ Правила доступа задаются в графическом интерфейсе или с помощью JavaScript - с использованием следующих параметров:
+  1. Время доступа
+  2. Членство в роли (RBAC)
+  3. Email пользователя и многие другие атрибуты:
+#+begin_src js
+var context = $evaluation.getContext();
+var identity = context.getIdentity();
+var attributes = identity.getAttributes();
+var email = attributes.getValue('email').asString(0);
+if (identity.hasRealmRole('admin') || email.endsWith('@keycloak.org')) {
+    $evaluation.grant();
+}
+#+end_src
+
+** Keycloak: продолжение
++ Права доступа могут задаваться на отдельный ресурс или на "scope" - действие над группой ресурсов (например =="book:read"==), или на группу ресурсов, объединенную общим типом (например =="book"==)
++ Есть официальное Java API, будет использовано в Demo-приложении
++ Совместим с OAuth2/UMA
++ Можно получить список всех доступных пользователю permissions:
+#+begin_src java
+     var ar = new AuthorizationRequest();
+
+        var response = getAuthzClient().authorization().authorize(ar);
+        var rpt = getAuthzClient().protection().introspectRequestingPartyToken(response.getToken());
+        for (Permission granted : rpt.getPermissions()) {
+            System.out.println(granted.toString());
+        }
+
+#+end_src
+
+
+
+
+
+** ORY/Ladon
+
++ Golang
++ Совместим с OAuth2/UMA
++ Источник данных: Любая БД (необходимо реализовать один интерфейс для доступа, есть реализация для Redis)
++ https://github.com/ory/ladon лицензия Apache2.
+
+*** Возможно, стоит расмотреть его.
+
+* Demo-решение на Java c использованием Spring Boot и  Keycloak
+** Архитектура
++ Приложение написано на Java и имеет JDBC-совместимый источник данных. Информация о правах доступа не хранится в базе данных, но каждой строке ставится в соответствие идентификатор из базы данных *Keycloak*
+
++ Необходимо придумать, как конвертировать список permissions в ID базы данных, поскольку некоторые permissions могут предоставлять доступ не просто к отдельным ресурсам, но и по widlcard.
+
++ В данном приложении для этого используется сочетание UMA Permissions (DAC) и RBAC (библиотекарь/пользователь)
+  + У пользователя производится фильтрация по ID.
+
+
+
+** Архитектура: взаимодействие
+
+#+begin_src plantuml :file img/arch.png
+participant Пользователь as user
+participant  приложение as app
+participant Keycloak as kc
+user -> app: вводит логин и пароль
+app -> kc: запрашивает аунтетификацию пользователя
+kc -> app: аунтетифицирует пользователя
+app -> user: выдает положительный ответ
+user -> app: отдает запрос на получение всех объектов
+app -> kc: получает список ролей пользователя
+kc -> app: возвращает список ролей
+alt админ входит в список ролей
+app -> user: выдает список всех объектов
+else админ не входит в список ролей
+app -> kc: запрашивает список всех прав для данного пользователя
+kc -> app: возвращает список прав
+app -> user: формирует и выдает список объектов, соответствующий списку прав
+end
+#+end_src
+
+#+RESULTS:
+[[file:img/arch.png]]
+
+** Подводные камни при реализации
+
++ Существует два API Keycloak permissions.
+  1. Permissions, редактируемые админом, могут быть простыми DAC/RBAC или сложными JavaScript
+  2. User-managed Access - permissions, которые могут быть заданы пользователем для других пользователей над ресурсами, которыми он владеет (это отключаемо, только DAC)
+
+
+** Исходный код приложения
+
+[[https://github.com/pashazz/library]]

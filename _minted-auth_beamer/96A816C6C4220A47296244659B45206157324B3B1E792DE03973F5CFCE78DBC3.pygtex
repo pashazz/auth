@@ -1,0 +1,10 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{var} \PYG{n+nx}{context} \PYG{o}{=} \PYG{n+nx}{\PYGZdl{}evaluation}\PYG{p}{.}\PYG{n+nx}{getContext}\PYG{p}{();}
+\PYG{k+kd}{var} \PYG{n+nx}{identity} \PYG{o}{=} \PYG{n+nx}{context}\PYG{p}{.}\PYG{n+nx}{getIdentity}\PYG{p}{();}
+\PYG{k+kd}{var} \PYG{n+nx}{attributes} \PYG{o}{=} \PYG{n+nx}{identity}\PYG{p}{.}\PYG{n+nx}{getAttributes}\PYG{p}{();}
+\PYG{k+kd}{var} \PYG{n+nx}{email} \PYG{o}{=} \PYG{n+nx}{attributes}\PYG{p}{.}\PYG{n+nx}{getValue}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}email\PYGZsq{}}\PYG{p}{).}\PYG{n+nx}{asString}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{);}
+
+\PYG{k}{if} \PYG{p}{(}\PYG{n+nx}{identity}\PYG{p}{.}\PYG{n+nx}{hasRealmRole}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}admin\PYGZsq{}}\PYG{p}{)} \PYG{o}{||} \PYG{n+nx}{email}\PYG{p}{.}\PYG{n+nx}{endsWith}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}@keycloak.org\PYGZsq{}}\PYG{p}{))} \PYG{p}{\PYGZob{}}
+    \PYG{n+nx}{\PYGZdl{}evaluation}\PYG{p}{.}\PYG{n+nx}{grant}\PYG{p}{();}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

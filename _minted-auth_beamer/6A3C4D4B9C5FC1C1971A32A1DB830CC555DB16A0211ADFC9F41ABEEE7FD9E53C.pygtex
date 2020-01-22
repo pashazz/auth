@@ -1,0 +1,9 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{var} \PYG{n}{ar} \PYG{o}{=} \PYG{k}{new} \PYG{n}{AuthorizationRequest}\PYG{o}{();}
+
+   \PYG{n}{var} \PYG{n}{response} \PYG{o}{=} \PYG{n}{getAuthzClient}\PYG{o}{().}\PYG{n+na}{authorization}\PYG{o}{().}\PYG{n+na}{authorize}\PYG{o}{(}\PYG{n}{ar}\PYG{o}{);}
+   \PYG{n}{var} \PYG{n}{rpt} \PYG{o}{=} \PYG{n}{getAuthzClient}\PYG{o}{().}\PYG{n+na}{protection}\PYG{o}{().}\PYG{n+na}{introspectRequestingPartyToken}\PYG{o}{(}\PYG{n}{response}\PYG{o}{.}\PYG{n+na}{getToken}\PYG{o}{());}
+   \PYG{k}{for} \PYG{o}{(}\PYG{n}{Permission} \PYG{n}{granted} \PYG{o}{:} \PYG{n}{rpt}\PYG{o}{.}\PYG{n+na}{getPermissions}\PYG{o}{())} \PYG{o}{\PYGZob{}}
+       \PYG{n}{System}\PYG{o}{.}\PYG{n+na}{out}\PYG{o}{.}\PYG{n+na}{println}\PYG{o}{(}\PYG{n}{granted}\PYG{o}{.}\PYG{n+na}{toString}\PYG{o}{());}
+   \PYG{o}{\PYGZcb{}}
+\end{Verbatim}

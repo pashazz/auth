@@ -1,0 +1,8 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+ \PYG{n}{List}\PYG{o}{\PYGZlt{}}\PYG{n}{PermissionTicketRepresentation}\PYG{o}{\PYGZgt{}} \PYG{n}{permissions} \PYG{o}{=}
+\PYG{n}{getAuthzClient}\PYG{o}{().}\PYG{n+na}{protection}\PYG{o}{().}\PYG{n+na}{permission}\PYG{o}{().}\PYG{n+na}{find}\PYG{o}{(...,} \PYG{n}{userId}\PYG{o}{,} \PYG{o}{...);}
+\PYG{k}{for} \PYG{o}{(}\PYG{n}{PermissionTicketRepresentation} \PYG{n}{permission} \PYG{o}{:} \PYG{n}{permissions}\PYG{o}{)} \PYG{o}{\PYGZob{}}
+    \PYG{n}{Book} \PYG{n}{book} \PYG{o}{=} \PYG{n}{books}\PYG{o}{.}\PYG{n+na}{get}\PYG{o}{(}\PYG{n}{permission}\PYG{o}{.}\PYG{n+na}{getResource}\PYG{o}{());}
+    \PYG{c+c1}{// Do something}
+\PYG{o}{\PYGZcb{}}
+\end{Verbatim}
